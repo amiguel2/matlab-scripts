@@ -1,0 +1,39 @@
+function [daughtercell] = find_daughtercell_mod(f,c)
+% find target cell mask
+fr = f.cell(c).frames(end);
+cid = f.cell(c).bw_label(end);
+xstart = f.frame(fr).object(cid).Xcont;
+ystart = f.frame(fr).object(cid).Ycont;
+targetcellmask = poly2mask(xstart,ystart,1002,1004);
+linked_cid = [];
+p_overlap = [];
+
+% for all cells after target cell
+for a = c:numel(f.cell)
+    idx = find(f.cell(a).frames == fr(end)+1); % find cells that start in frame after
+    if ~isempty(idx) % if cell exists
+        frnew = f.cell(a).frames(idx); %get mask of new cell
+        cidnew = f.cell(a).bw_label(idx);
+        xnewcell = f.frame(frnew).object(cidnew).Xcont;
+        ynewcell = f.frame(frnew).object(cidnew).Ycont;
+        newcellmask = poly2mask(xnewcell,ynewcell,1002,1004);
+        summatrix = targetcellmask + newcellmask;
+        percent_overlap = numel(find(summatrix == 2))/numel(find(targetcellmask == 1));
+        if percent_overlap > 0 %if percent overlap
+            %fprintf('cell %d with cell: %d overlap = %0.2f\n',c,a,percent_overlap)
+            c0 = find_mothercell(f,a) % record cell
+            if c == 
+        end
+    end
+end
+
+%fprintf('number of overlapping cells = %d\n',numel(linked_cid))
+daughtercell = [];
+for j = 1:numel(linked_cid)
+    c0 = find_mothercell(f,linked_cid(j));
+    %fprintf('targetcell %d daughter cell %d, mother %d\n',c,linked_cid(j),c0)
+    if c == c0
+        daughtercell = [daughtercell linked_cid(j)];
+    end
+end
+end
