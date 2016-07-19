@@ -1,6 +1,23 @@
 function graph_chrom(samples,varargin)
-% graph_chrom({samp1,{Samp2rep1,Samp2rep2},samp3,...},[{'legend1','legend2',...}],[display_values],[plot_seperately],[plot
-% errorbars],[use standard_error],[log];)
+% graph_chrom({samp1,{Samp2rep1,Samp2rep2},samp3,...},[optional parameters])
+% samples is a cell with different loaded chromanalysis files. You can either load single files or replicates.
+% Examples:
+% To plot individual files, you would use: graph_chrom({samp1,samp2,samp3})
+% To plot replicate files, you would use: graph_chrom({{samp1rep1,sampe2rep2})
+% To plot samples and replicates, use: graph_chrom({{samp1rep1,samp2rep2},{samp2rep1,samp2rep2})
+%
+% OPTIONAL
+% you can specify additional parameters in the format function(...,'variable',value)
+% Optional parameters: 
+% legname, add legends to graph
+% display_Values, plots the actual bar values as text
+% plot_error, adds standard deviation error bars to plots,
+% standard_error, plots standard error rather than SD
+% iflog, plots individual component graph on a log scale. 
+% Optiona parameter Examples:
+% graph_chrom({samp1,{Samp2rep1,Samp2rep2},samp3,...},'legname',[{'legend1','legend2',...}])
+% will add legends
+% 
 
 % default parameters
     legname = [];

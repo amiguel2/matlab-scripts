@@ -1,8 +1,27 @@
 function plot_chrom(samples,varargin)
-% plot_chrom({sample 1, sample2,...},[normtype],[shift],[avg_on],[color],[align_param])
-% normtype options: 'none','max','sum'
 
-% default variables
+% plot_chrom(samples,[optional parameters])
+% samples is a cell with different loaded chromanalysis files.
+% Example: graph_chrom({samp1,samp2,samp3})
+%
+% OPTIONAL
+% you can specify additional parameters in the format function(...,'variable',value)
+% Optional parameters: color,shift,align,avg_on
+% 
+% 'color', changes color of plot
+% 'normtype', performs normalization on chromatogram. three types: 'none','max','sum'
+% 'shift', shifts chromatogram on Y-axis
+% 'align_param', aligns to certain peak. Requires align_param in the format: {'Peak Name', 'X-axis position'}. Ex. {'D44',12}
+% 'avg_on', plots the average of all samples
+%
+% Optional parameter Examples:
+% plot_chrom({KC664,KC665,KC666},'normtype','sum','color',[1 0 0; 0 1 0;0 0 1]); 
+% - will plot three chromatograms with specified colors using sum normalization
+
+
+
+
+%% default variables
 color = cbrewer('qual','Set1',numel(samples));
 shift = 0;
 avg_on = 0;
@@ -20,59 +39,34 @@ if ~isempty(varargin)
     end
 end
 
-% % optional variables
-% n = numel(varargin); % number of variables
-% if n == 0 || n == 1
-%     %default parameters
-% 
-% elseif n == 2
-%     shift = varargin{2};
-%     [align,align_param] = call_align_param(align);
-% elseif n == 3
-%     shift = varargin{2};
-%     avg_on = varargin{3};
-%     [align,align_param] = call_align_param(align);
-% elseif n == 4
-%     shift = varargin{2};
-%     avg_on = varargin{3};
-%     color = varargin{4};
-%     if size(color) ~= [numel(samples),3]
-%         fprintf('Color not correct dimensions. Setting default color')
-%     end
-%     [align,align_param] = call_align_param(align);
-% elseif n == 5
-%     shift = varargin{2};
-%     avg_on = varargin{3};
-%     color = varargin{4};
-%     if size(color) ~= [numel(samples),3]
-%         fprintf('Color not correct dimensions. Setting default color')
-%     end
-%     align = 1;
-%     align_param = varargin{5};
-% else
-%     fprint('Too many variables\nplot_chrom({sample 1, sample2,...},[normtype],[shift],[avg_on],[color])\n')
-% end
-
+% if align specified, plot aligned
 if exist('align_param','var')
-    %[align_param] = call_align_param(align);
     plot_chrom_align(samples,normtype,align_param{1},align_param{2},shift,color)
 else
     % estimate array size
     array_size = cellfun(@(x) numel(x.t), extractfield(cellfun(@(x) x,samples),'chrom'));
-    f = zeros(min(array_size),1);
-    t = zeros(min(array_size),1);
+
+    % for each sample
     for i = 1:numel(samples)
         sample = samples{i};
         if exist('normtype','var')
             normfactor = specify_norm(sample,normtype);
         end
+        % initialize arrays
+        f = zeros(min(array_size),1);
+        t = zeros(min(array_size),1);
+        
+        % normalize chrom based on specified norm type
         fn = sample.chrom.final/normfactor;
-        f = f + fn(1:numel(f));
+        % shift y-axis by specified increment
+        f = f + fn(1:numel(f))+(shift*(i-1));
+        % get x-axis values
         t = t + sample.chrom.t(1:numel(t));
-        plot(sample.chrom.t,(sample.chrom.final/normfactor)+(shift*(i-1)),'Color',color(i,:));
+        % plot chromatogram
+        plot(t,f,'Color',color(i,:));
         hold on;
     end
-    if avg_on
+    if avg_on %if avg_on, plot average of all samples
         plot(t/n,f/n,'Color','Black','LineStyle',':');
     end
     xlim([0 22])
@@ -80,6 +74,7 @@ else
 end
 end
 
+% function that specifies the factor based on normtype
 function normfactor = specify_norm(sample,normtype)
 if strcmp(normtype,'max')
     normfactor = max(sample.chrom.final);
@@ -89,45 +84,40 @@ elseif strcmp(normtype,'none')
     normfactor = 1;
 else
     fprintf('normtype given does not exist. Defaulted to none')
-    normfactor = 1;%sum(sample.chrom.final);
+    normfactor = 1;
 end
 end
 
+% function that plots aligned peaks
 function plot_chrom_align(samples,normtype,peak,peak_t,shift,color)
 % estimate array size
 array_size = cellfun(@(x) numel(x.t), extractfield(cellfun(@(x) x,samples),'chrom'));
 
 for i = 1:numel(samples)
+    % initilize arrays
     f = zeros(min(array_size),1);
     t = zeros(min(array_size),1);
     sample = samples{i};
+    % find peak
     peak_idx = find(strcmp(peak,{sample.Peaks.name}));
     if isempty(peak_idx)
         fprintf('Peak not present\n')
         return
     end
+    % get peak start, end, and peak values
     pk_start = find(sample.chrom.t > sample.Peaks(peak_idx).interval(1),1);
     pk_end = find(sample.chrom.t > sample.Peaks(peak_idx).interval(2),1);
     pk_tip = find(sample.chrom.final == max(sample.chrom.final(pk_start:pk_end)));
     
+    % properly normalize
     normfactor = specify_norm(sample,normtype);
     fn = sample.chrom.final/normfactor;
+    % shift Y-axis if specified
     f = f + fn(1:numel(f))+(shift*(i-1));
+    % shift X-axis to specified position peak_t
     t = t + sample.chrom.t(1:numel(t)) - sample.chrom.t(pk_tip) + peak_t;
-    
+    % plot shifted values
     plot(t,f,'Color',color(i,:));
     hold on;
 end
-end
-
-function [ap] = call_align_param(a)
-ap = [];
-% while isempty(a)
-%     a = input('Align? 1 for yes, 0 for no\n');
-% end
-% if a
-ap{1} = input('What peak? Ex. ''D44''\n','s');
-ap{2} = input('What peak shift (along the x axis)? Ex. 5\n');
-% end
-
 end
