@@ -78,7 +78,9 @@ end
 
 for l = frames
     % clear current axes
-    %cla;
+    if numel(frames) > 1
+        cla;
+    end
     if exist('imageloc','var')
         im = imread(imageloc,l);
         [counts,x] = imhist(im);

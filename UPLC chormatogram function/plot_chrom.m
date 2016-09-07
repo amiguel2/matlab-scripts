@@ -26,11 +26,12 @@ color = cbrewer('qual','Set1',numel(samples));
 shift = 0;
 avg_on = 0;
 normtype = 'none';
+label=0;
 
 if ~isempty(varargin)
     evennumvars = mod(numel(varargin),2);
     if evennumvars
-        fprintf('Too many arguments. Use: get_data(list,tframe,pxl,[optional] fluor lineage tshift microbej onecolor)\n')
+        fprintf('Too many arguments. Use: plot_chrom({samples},[optional] normtype shift align_param avg_on color)\n')
         return
     end
     
@@ -41,7 +42,7 @@ end
 
 % if align specified, plot aligned
 if exist('align_param','var')
-    plot_chrom_align(samples,normtype,align_param{1},align_param{2},shift,color)
+    plot_chrom_align(samples,normtype,align_param{1},align_param{2},shift,color,label)
 else
     % estimate array size
     array_size = cellfun(@(x) numel(x.t), extractfield(cellfun(@(x) x,samples),'chrom'));
@@ -65,6 +66,12 @@ else
         % plot chromatogram
         plot(t,f,'Color',color(i,:));
         hold on;
+        if label && i == numel(samples)
+            plot_labels(sample,shift)
+        end
+        
+        text(-1,shift*(i-1),sprintf('(%d)',i),'Color',color(i,:))
+        
     end
     if avg_on %if avg_on, plot average of all samples
         plot(t/n,f/n,'Color','Black','LineStyle',':');
@@ -89,7 +96,7 @@ end
 end
 
 % function that plots aligned peaks
-function plot_chrom_align(samples,normtype,peak,peak_t,shift,color)
+function plot_chrom_align(samples,normtype,peak,peak_t,shift,color,label)
 % estimate array size
 array_size = cellfun(@(x) numel(x.t), extractfield(cellfun(@(x) x,samples),'chrom'));
 
@@ -119,5 +126,31 @@ for i = 1:numel(samples)
     % plot shifted values
     plot(t,f,'Color',color(i,:));
     hold on;
+    
+    if label && i == numel(samples)
+        plot_labels(sample,shift)
+    end
 end
+
 end
+
+ function plot_labels(sample,shift)
+    for peak_idx = 1:numel(sample.Peaks)
+        % get peak start, end, and peak values
+        pk_start = find(sample.chrom.t > sample.Peaks(peak_idx).interval(1),1);
+        pk_end = find(sample.chrom.t > sample.Peaks(peak_idx).interval(2),1);
+        pk_tip = find(sample.chrom.final == max(sample.chrom.final(pk_start:pk_end)));
+        x = sample.chrom.t(pk_start);
+        y = -0.05;
+        w = sample.chrom.t(pk_end)-sample.chrom.t(pk_start);
+        h = 0.01;
+        if mod(peak_idx,2) == 0
+            rectangle('Position',[x,y,w,h],'FaceColor',[0 0 0],'EdgeColor',[0 0 0]);
+            text(sample.chrom.t(pk_tip),0.05+sample.chrom.final(pk_tip)+shift,sample.Peaks(peak_idx).name,'Color',[0 0 0])
+        else
+            rectangle('Position',[x,y,w,h],'FaceColor',[0 0 1],'EdgeColor',[0 0 1]);
+            text(sample.chrom.t(pk_tip),0.05+sample.chrom.final(pk_tip)+shift,sample.Peaks(peak_idx).name,'Color',[0 0 1])
+        end
+        
+    end
+ end

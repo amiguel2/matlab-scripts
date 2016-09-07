@@ -30,7 +30,6 @@ idx = find(cellfun(@numel,{f.cells(1:c).object}) > 3);
 temp = cellfun(@(x) x(end),{f.cells(idx).frame},'UniformOutput',false);
 pot_cells = idx(find([temp{:}] == fr(1)-1));
 for a = pot_cells %for all cells that appear before target cell
-    
     try
         frnew = f.cell(a).frames(f.cell(a).frames == fr(1)-1);
         cidnew = f.cell(a).bw_label(f.cell(a).frames == fr(1)-1);

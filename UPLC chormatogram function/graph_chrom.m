@@ -8,39 +8,39 @@ function graph_chrom(samples,varargin)
 %
 % OPTIONAL
 % you can specify additional parameters in the format function(...,'variable',value)
-% Optional parameters: 
+% Optional parameters:
 % legname, add legends to graph
-% display_Values, plots the actual bar values as text
+% display_values, plots the actual bar values as text
 % plot_error, adds standard deviation error bars to plots,
 % standard_error, plots standard error rather than SD
-% iflog, plots individual component graph on a log scale. 
+% iflog, plots individual component graph on a log scale.
 % Optiona parameter Examples:
 % graph_chrom({samp1,{Samp2rep1,Samp2rep2},samp3,...},'legname',[{'legend1','legend2',...}])
 % will add legends
-% 
+%
 
 % default parameters
-    legname = [];
-    display_values = 0;
-    sep_fig = 0;
-    plot_error = 1;
-    standard_error= 1;
-    iflog = 0;
+legname = [];
+display_values = 0;
+sep_fig = 0;
+plot_error = 1;
+standard_error= 1;
+iflog = 0;
 
-    if ~isempty(varargin)
-        evennumvars = mod(numel(varargin),2);
-        if evennumvars
-            fprintf('Too many arguments. Use: get_data(list,tframe,pxl,[optional] fluor lineage tshift microbej onecolor)\n')
-            return
-        end
-        
-        for i = 1:2:numel(varargin)
-            eval(sprintf('%s = varargin{%d};',varargin{i},i+1));
-        end
+if ~isempty(varargin)
+    evennumvars = mod(numel(varargin),2);
+    if evennumvars
+        fprintf('Too many arguments. Use: get_data(list,tframe,pxl,[optional] fluor lineage tshift microbej onecolor)\n')
+        return
     end
+    
+    for i = 1:2:numel(varargin)
+        eval(sprintf('%s = varargin{%d};',varargin{i},i+1));
+    end
+end
 
 % if numel(varargin) == 1
-% 
+%
 % elseif numel(varargin) == 2
 %     legname = varargin{1};
 %     text_on = varargin{2};
@@ -142,9 +142,9 @@ for ib = 1:numel(hb)
     fun = @(x) sprintf('%0.4f', x);
     D = cellfun(fun, num2cell(mol_frac(ib,:)), 'UniformOutput',0);
     if display_values && ~iflog
-        hold on; text(hb(1).XData+hb(1).XOffset,(ones(1,numel(xData))*(-.1))+(.025*(1-ib)),D);
+        hold on; text(hb(1).XData+hb(1).XOffset,(ones(1,numel(xData))*(-.05))+(.015*(1-ib)),D);
     elseif display_values && iflog
-        hold on;text(hb(1).XData+hb(1).XOffset,(ones(1,numel(xData))*(0.00003))+(0.00001*(1-ib)),D);
+        hold on;text(hb(1).XData+hb(1).XOffset,(ones(1,numel(xData))*(0.00003))+(0.000006*(1-ib)),D);
     end
 end
 

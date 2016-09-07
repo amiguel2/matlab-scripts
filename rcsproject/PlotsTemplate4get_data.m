@@ -1,25 +1,29 @@
-% % data
-% clear all
-% close all
-% cd('/Users/amiguel/CloudStation/Rcs_EWTIMP_100ms_phase_35ms_etgfp_nd4_3/60')
-% list1 = dir('1-*.mat'); % EM
-% list2 = dir('2-*.mat'); % WT
-% list3 = dir('3-*.mat'); % Peri
-% list4 = dir('4-*.mat'); % IM
-% 
+% data
+clear all
+close all
+cd('/Users/amiguel/OneDrive/Research/Projects/Rcs_System/RCS29 Cellasic/stacks')
+list1 = dir('1-*.mat'); % EM
+list2 = dir('2-*.mat'); % WT
+list3 = dir('3-*.mat'); % Peri
+list4 = dir('4-*.mat'); % IM
+%  
 % mesh_contours
-% fluor_contours
-% c = cbrewer('qual','Set1',4);
+ fluor_contours
+%%
+c = cbrewer('qual','Set1',4);
 em = get_data(list1,2,0.08,'onecolor',c(1,:),'fluor_on',1,'lineage',1);
 wt = get_data(list2,2,0.08,'onecolor',c(2,:),'fluor_on',1,'lineage',1);
 peri = get_data(list3,2,0.08,'onecolor',c(3,:),'fluor_on',1,'lineage',1);
 im = get_data(list4,2,0.08,'onecolor',c(4,:),'fluor_on',1,'lineage',1);
 save('RCS29-data.mat')
-
+%load('RCS29-data.mat')
 %% length plots
+
 % filtidx = find([cellfun(@(x) mean(x.avg_fluor),peri)> 800]);
 % cs = {peri{filtidx}};
-cs=cs4;
+cs=peri;
+plotsave = 'peri-';
+j = 3; % color
 % x = find(cell2mat(cellfun(@(X) mean(X.area) < 2,cs,'UniformOutput',false))==1);
 % bad_cells = [1507 2970 x];
 % allcells =1:numel(cs);
@@ -27,18 +31,17 @@ cs=cs4;
 % cs = {cs{filtcells}};
 
 %
-plotsave = 'peri-';
-j = 3;
+
 c0 = cbrewer('qual','Set1',4);
 c = c0;
 % c(4,:) = c0(3,:);
 % c(3,:) = c0(4,:);
 
-tF = 70;
-tS = 10;
+tF = 160;
+tS = 0;
 lineage_on = 0;
 save_plot = 1;
-fluor_on = 0;
+fluor_on = 1;
 close all;
 all_length = [];
 all_time = [];
@@ -154,8 +157,8 @@ if save_plot
     savefig([plotsave 'length.fig'])
 end
 
-%% width plots
-figure;
+% width plots
+figure('Position',[0 0 300 250])
 
 for i = 1:numel(cs)
     if cs{i}.time(end) < tF
@@ -181,9 +184,10 @@ for i = 1:max(all_time)
 end
 idx1 = ~isnan(med_width(:,2));
 plot(med_width(idx1,1),med_width(idx1,2),'black','LineWidth',2)
-
-ylabel('Width (µm)')
-xlabel('Time (min)')
+set(gca,'FontSize',15)
+set(gca,'FontName','Myriad Pro')
+ylabel('Width (µm)','FontSize',20)
+xlabel('Time (min)','FontSize',20)
 set(gcf,'color','white')
 ylim([0.5 2])
 xlim([tS tF])
@@ -194,7 +198,7 @@ end
 
 if fluor_on
     % fluor plots
-    figure;
+    figure('Position',[0 0 300 250])
     
     for i = 1:numel(cs)
         if cs{i}.time(end) < tF
@@ -215,16 +219,19 @@ if fluor_on
     med_fluor = [];
     for i = 1:max(all_time)
         idx = find(i == all_time);
+        if ~isempty(idx)
         med_fluor = [med_fluor;[i,nanmedian(all_fluor(idx))]];
+        end
         hold on;
     end
     idx1 = ~isnan(med_fluor(:,2));
     plot(med_fluor(idx1,1),med_fluor(idx1,2),'black','LineWidth',2)
-    
-    ylabel('Average Fluorescence')
-    xlabel('Time (min)')
+    set(gca,'FontSize',15)
+    set(gca,'FontName','Myriad Pro')
+    ylabel('Fluorescence','FontSize',20)
+    xlabel('Time (min)','FontSize',20)
     set(gcf,'color','white')
-%     ylim([300 350])
+    ylim([300 350])
     xlim([tS tF])
     if save_plot
         export_fig([plotsave 'fluor.pdf'])
@@ -232,7 +239,7 @@ if fluor_on
     end
 end
 
-%% growthrate plots
+% growthrate plots
 figure('Color',[1 1 1],'Position',[0 0 300 250])
 
 %figure('Color',[1 1 1],'Position', [100, 100, 800, 800]);
@@ -272,17 +279,17 @@ figure('Color',[1 1 1],'Position',[0 0 300 250])
 for i = 1:numel(cs)
     if lineage_on
         if cs{i}.lineage
-            if ~isempty(cs{i}.lambda.beta)
+            if ~isnan(cs{i}.lambda.beta) 
                 scatter(cs{i}.time(1),cs{i}.lambda.beta(2),50,cs{i}.color','UserData',i)
             end
         else
-            if ~isempty(cs{i}.lambda.beta)
+            if ~isnan(cs{i}.lambda.beta)
                 scatter(cs{i}.time(1),cs{i}.lambda.beta(2),50,[0.5 0.5 0.5],'UserData',i)
             end
         end
         hold on;
     else
-        if ~isempty(cs{i}.lambda.beta)
+        if ~isnan(cs{i}.lambda.beta)
             scatter(cs{i}.time(1),cs{i}.lambda.beta(2),50,c(j,:),'filled','UserData',i); hold on;
         end
     end
@@ -516,9 +523,9 @@ end
 
 %% Median Comparisons
 figure('Color',[1 1 1],'Position', [100, 100, 800, 800]);
-exp = {a22_0, wt, im, peri};
+exp = {em, wt, im, peri};
 tS = 0;
-tF = 60;
+tF = 160;
 lineage_on = 1; 
 fluor_on = 1;
 for j = 1:numel(exp)
@@ -541,7 +548,7 @@ for j = 1:numel(exp)
     all_fluor = [];
     for i = 1:numel(cs)
         if fluor_on
-        all_fluor = [all_fluor cs{i}.avg_fluor-cs{i}.avg_fluor(1)];
+        all_fluor = [all_fluor cs{i}.avg_fluor];
         end
         all_length = [all_length cs{i}.length];
         all_time = [all_time cs{i}.time];
@@ -606,9 +613,11 @@ for j = 1:numel(exp)
     err_fluor = [];
     for i = 1:max(all_time)
         idx = find(i == all_time);
+        if ~isempty(idx)
         med_fluor = [med_fluor;[i,nanmedian(all_fluor(idx))]];
         err_fluor = [err_fluor; [i,nanstd(all_fluor(idx))]];
         hold on;
+        end
     end
     idx1 = ~isnan(med_fluor(:,2));
     xlen = med_fluor(idx1,1);
@@ -668,8 +677,8 @@ legend([h2(1),h2(2),h2(3),h2(4)],'Empty','WT','IM','Peri')
 
 subplot(2,2,4)
 
-title('Fluorescence')
-ylabel('Average Fluorescence')
+title('Max Fluorescence')
+ylabel('Max Fluorescence')
 xlabel('Time (min)')
 set(gcf,'color','white')
 xlim([tS tF])
