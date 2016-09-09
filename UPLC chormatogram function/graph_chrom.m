@@ -114,8 +114,10 @@ for i = 1:numel(samples)
         pgquant = [pgquant; pgq];
         smerror = [smerror; NaN(1,numel(m))];
         sperror = [sperror; NaN(1,numel(pgq))];
+        %fprintf('%s mean: %f\n %s ste: %f\n',legname{i},m,legname{i},NaN(1,numel(m)))
     elseif iscell(sample)
         [a,m,pgq,sa,sm,spgq] = average_replicates(sample,standard_error);
+        %fprintf('%s mean: %f\n %s ste: %f\n',legname{i},m,legname{i}.sm)
         mol_frac = [mol_frac; m];
         pgquant = [pgquant; pgq];
         smerror = [smerror; sm];
@@ -183,8 +185,14 @@ for ib = 1:numel(hb1)
     end
     fun = @(x) sprintf('%0.1f', x);
     D = cellfun(fun, num2cell(pgquant(ib,:)), 'UniformOutput',0);
-    if display_values
+    D1 = cellfun(fun, num2cell(sperror(ib,:)), 'UniformOutput',0);
+    if display_values && sep_fig == 0
         hold on;text(hb1(1).XData+hb1(1).XOffset,(ones(1,numel(xData))*(-10))+(3*(1-ib)),D);
+        hold on;text(hb1(1).XData,(ones(1,numel(xData))*(-10))+(3*(1-ib)),D1,'Color','r');
+    elseif display_values && sep_fig
+        hold on;text(hb1(1).XData+hb1(1).XOffset,(ones(1,numel(xData))*(-3))+(1*(1-ib)),D);
+        hold on;text(hb1(1).XData,(ones(1,numel(xData))*(-3))+(1*(1-ib)),D1,'Color','r');
+        
     end
 end
 
