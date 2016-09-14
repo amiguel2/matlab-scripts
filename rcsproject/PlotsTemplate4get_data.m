@@ -1,21 +1,21 @@
 % data
 clear all
 close all
-cd('/Users/amiguel/OneDrive/Research/Projects/Rcs_System/RCS29 Cellasic/stacks')
-list1 = dir('1-*.mat'); % EM
-list2 = dir('2-*.mat'); % WT
-list3 = dir('3-*.mat'); % Peri
-list4 = dir('4-*.mat'); % IM
+cd('/Users/amiguel/sherlock_scratch/Working_Folder/Rcs_system/RCS30/')
+list1 = dir('1-*MESH.mat'); % EM
+list2 = dir('2-*MESH.mat'); % WT
+list3 = dir('3-*MESH.mat'); % Peri
+list4 = dir('4-*MESH.mat'); % IM
 %  
 % mesh_contours
- fluor_contours
+%fluor_contours
 %%
 c = cbrewer('qual','Set1',4);
-em = get_data(list1,2,0.08,'onecolor',c(1,:),'fluor_on',1,'lineage',1);
-wt = get_data(list2,2,0.08,'onecolor',c(2,:),'fluor_on',1,'lineage',1);
-peri = get_data(list3,2,0.08,'onecolor',c(3,:),'fluor_on',1,'lineage',1);
-im = get_data(list4,2,0.08,'onecolor',c(4,:),'fluor_on',1,'lineage',1);
-save('RCS29-data.mat')
+em = get_data(list1,2,0.08,'onecolor',c(1,:),'fluor_on',0,'lineage',1);
+wt = get_data(list2,2,0.08,'onecolor',c(2,:),'fluor_on',0,'lineage',1);
+% peri = get_data(list3,2,0.08,'onecolor',c(3,:),'fluor_on',0,'lineage',1);
+% im = get_data(list4,2,0.08,'onecolor',c(4,:),'fluor_on',0,'lineage',1);
+save('RCS31-data.mat')
 %load('RCS29-data.mat')
 %% length plots
 

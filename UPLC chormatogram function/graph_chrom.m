@@ -187,7 +187,7 @@ for ib = 1:numel(hb1)
     D = cellfun(fun, num2cell(pgquant(ib,:)), 'UniformOutput',0);
     D1 = cellfun(fun, num2cell(sperror(ib,:)), 'UniformOutput',0);
     if display_values && sep_fig == 0
-        hold on;text(hb1(1).XData+hb1(1).XOffset,(ones(1,numel(xData))*(-10))+(3*(1-ib)),D);
+        hold on;text(hb1(1).XData+(hb1(1).XOffset*1.5),(ones(1,numel(xData))*(-10))+(3*(1-ib)),D);
         hold on;text(hb1(1).XData,(ones(1,numel(xData))*(-10))+(3*(1-ib)),D1,'Color','r');
     elseif display_values && sep_fig
         hold on;text(hb1(1).XData+hb1(1).XOffset,(ones(1,numel(xData))*(-3))+(1*(1-ib)),D);
