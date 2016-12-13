@@ -1,4 +1,8 @@
 function plotAllCells(f,varargin)
+% Written by Amanda Miguel
+% Created: 2016-11-28
+% Last Modified: 2016-11-30
+%
 % Plots contours with or without tif stack.
 % plotAllCells(f,[optional])
 % Optional Parameters: pause_on,make_movie,imageloc,output, make_tif,
@@ -12,17 +16,24 @@ function plotAllCells(f,varargin)
 % plotAllCells(f,'show_cellid',1) plots the cellID next to the cell
 % plotAllCells(f,'cellid',cellidnum) plots the specific cell with that cell id in red
 % plotAllCells(f,'frames',frame_range) plots the specific frames
+% plotAllCells(f,'kappasmoothfilt1',value) filters cells below this value
+% plotAllCells(f,'kappasmoothfilt2',value) filters cells above this value
+% plotAllCells(f,'areafilt',value) filters cells above this value
 
-
+% segmentation parameters
+kappasmoothfilt1 = Inf;%0.25;
+kappasmoothfilt2 = -Inf;%-0.25;%-0.1;
+areafilt = 250;
 
 % default parameters
 make_tif = 1;
-pause_on = 0;
+pause_on = 1;
 make_movie = 0;
 output = 'allcellmovie.tif';
 show_cellid = 0;
 color = [0 0 1];
-
+count = 0;
+microscope = 'none';
 
 if ~isempty(varargin)
     evennumvars = mod(numel(varargin),2);
@@ -51,7 +62,8 @@ if ~isfield(f,'cells')
     f = make_celltable(f);
 end
 % make a figure
-%figure('Color',[1 1 1]);
+figure('Color',[1 1 1]);
+
 
 hold on;
 % for every frame
@@ -106,11 +118,12 @@ for l = frames
                 
                 % Now I can plot it
                 
-                if f.frame(l).object(g).kappa_raw > -0.2
+                if f.frame(l).object(g).kappa_smooth < kappasmoothfilt1 & f.frame(l).object(g).area > areafilt & f.frame(l).object(g).kappa_smooth > kappasmoothfilt2 % & f.frame(l).object(g).area > 500 & f.frame(l).object(g).area < 200%& 
+                    count = count + 1;
                     plot(xPos,yPos,'Color',color,'UserData',f.frame(l).object(g).cellID)
                     hold on;
                 else
-                    plot(xPos,yPos,'Color',color,'UserData',f.frame(l).object(g).cellID)
+                    plot(xPos,yPos,'Color',[0.5 0.5 0.5],'UserData',f.frame(l).object(g).cellID)
                 end
                 
                 try
@@ -136,7 +149,7 @@ for l = frames
     te = text(0.7,0.05,sprintf('frame: %d',l),'FontSize',15,'Units','normalized');
     axis equal
     drawnow
-    
+
     % pause .1 seconds
     if pause_on
         pause;
@@ -159,4 +172,5 @@ if make_movie && ~make_tif
         movie2avi(F, sprintf('%s',output), 'compression', 'None');
     end
 end
+fprintf('%d\n',count)
 end

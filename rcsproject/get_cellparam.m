@@ -1,16 +1,20 @@
-function [l,t,w,a,varargout] = get_cellparam(contour,id,varargin)
+function [l,t,w,a,v,sa,varargout] = get_cellparam(contour,id,varargin)
 % [l,t,w,varargout] = get_celllength(contour,id,varargin)
 % gets cell length. no optional parameters grabs whole thing.
 % varargin{1} = start
 % varargin{2} = end
 
-curvature = -0.2;
+kupper  = Inf;%0.25;
+klower =  -Inf;%-0.25;
+arealower = 250;
 
 if isfield(contour,'cells')
     l = [];
     t = [];
     w = [];
     a = [];
+    v = [];
+    sa = [];
     
     if isfield(contour.frame(1).object(1),'ave_fluor')
         fluor_on = 1;
@@ -41,11 +45,14 @@ if isfield(contour,'cells')
             ob = contour.frame(frames(idx)).object(objects(idx));
             try
                 if ~isempty(ob.cell_length)
-                    if ob.kappa_raw > curvature 
+                    if ob.kappa_smooth < kupper & ob.area > arealower & ob.kappa_smooth > klower
                         l = [ l ob.cell_length];
                         t = [ t frames(idx)];
                         w = [ w ob.cell_width];
                         a = [ a ob.area];
+                        mesh = ob.mesh;
+                        v = [ v volume_from_mesh(mesh,[mean([mesh(:,1),mesh(:,3)],2), mean([mesh(:,2),mesh(:,4)],2)])];
+                        sa = [ sa sarea_from_mesh(mesh,[mean([mesh(:,1),mesh(:,3)],2), mean([mesh(:,2),mesh(:,4)],2)])];
                         if fluor_on
                             flr = [flr ob.ave_fluor];
                         end
@@ -58,6 +65,9 @@ if isfield(contour,'cells')
                         t = [ t frames(idx)];
                         w = [ w nanmean(ob.width)];
                         a = [ a ob.area];
+                        mesh = ob.mesh;
+                        v = [ v volume_from_mesh(mesh,[mean([mesh(:,1),mesh(:,3)],2), mean([mesh(:,2),mesh(:,4)],2)])];
+                        sa = [ sa sarea_from_mesh(mesh,[mean([mesh(:,1),mesh(:,3)],2), mean([mesh(:,2),mesh(:,4)],2)])];
                         if fluor_on
                             flr = [flr ob.ave_fluor];
                         end
@@ -68,6 +78,9 @@ if isfield(contour,'cells')
                         t = [ t frames(idx)];
                         w = [ w ob.width];
                         a = [ a ob.area];
+                        mesh = ob.mesh;
+                        v = [ v volume_from_mesh(mesh,[mean([mesh(:,1),mesh(:,3)],2), mean([mesh(:,2),mesh(:,4)],2)])];
+                        sa = [ sa sarea_from_mesh(mesh,[mean([mesh(:,1),mesh(:,3)],2), mean([mesh(:,2),mesh(:,4)],2)])];
                         if fluor_on
                             flr = [flr ob.ave_fluor];
                         end
@@ -86,11 +99,17 @@ if isfield(contour,'cells')
     w = w(~isnan(l));
     l = l(~isnan(l));
     a = a(~isnan(l));
+    v = v(~isnan(l));
+    sa = sa(~isnan(l));
 else
     fprintf('No cells structure. Run make_celltable on contour first\n')
     l = [];
     t = [];
     w = [];
     a = [];
+    v = [];
+    sa = [];
 end
 end
+
+

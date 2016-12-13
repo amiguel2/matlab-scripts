@@ -27,6 +27,7 @@ lineage = 0;
 microbej = 0;
 onecolor = 0;
 tshift = 0;
+excludehighresiduals = 1; % excludes cells that have high residuals when fit to an exponential
 
 if ~isempty(varargin)
     evennumvars = mod(numel(varargin),2);
@@ -40,51 +41,8 @@ if ~isempty(varargin)
     end
 end
 
-% if numel(varargin) == 1
-%     fluor_on = varargin{1};
-%     lineage = 0;
-%     microbej = 0;
-%     tshift = 0;
-%     onecolor = 0;
-% elseif numel(varargin) == 2
-%     fluor_on = varargin{1};
-%     lineage = varargin{2};
-%     microbej = 0;
-%     tshift = 0;
-%     onecolor = 0;
-% elseif numel(varargin) == 3
-%     fluor_on = varargin{1};
-%     lineage = varargin{2};
-%     tshift = varargin{3};
-%     microbej = 0;
-%     onecolor = 0;
-% elseif numel(varargin) == 4
-%     fluor_on = varargin{1};
-%     lineage = varargin{2};
-%     tshift = varargin{3};
-%     microbej = varargin{4};
-%     onecolor = 0;
-% elseif numel(varargin) == 5
-%     fluor_on = varargin{1};
-%     lineage = varargin{2};
-%     tshift = varargin{3};
-%     microbej = varargin{4};
-%     onecolor = varargin{5};
-% elseif numel(varargin) > 5
-%     fprintf('Too many arguments. Use: get_data(list,tframe,pxl,[optional] fluor lineage tshift microbej onecolor)\n')
-%     return
-% else
-%     fluor_on = 0;
-%     lineage = 0;
-%     microbej = 0;
-%     onecolor = 0;
-%     tshift = 0;
-% end
 
-% Error Handling
-% turn this specific warning into an error
 s = warning('error', 'stats:nlinfit:IllConditionedJacobian'); %#ok<CTPCT>
-
 
 %
 c1=[0 1 1];
@@ -106,15 +64,20 @@ for i = 1:numel(list)
     maxt = (numel(f.frame)*tframe)-(tframe)+tshift;
     
     % find cells with at minimum 3 frames
-    cells = find(cellfun(@numel,{f.cells.object}) > 3);
+    cells = find(cellfun(@numel,{f.cells.object}) > 4);
     
     % for these cells
     for cid = cells;
         lin_cell = 0;
         if fluor_on
-            [l,t,w,a,flr] = splitcells(f,cid);
+            [l,t,w,a,v,sa,flr] = splitcells(f,cid);
         else
-            [l,t,w,a] = splitcells(f,cid);
+            [l,t,w,a,v,sa] = splitcells(f,cid);
+        end
+        
+        % filter for high norm resiudal
+        if excludehighresiduals && ~isempty(l)
+            l = eval_resid(l,t);
         end
         
         if ~isempty(l) && ~iscell(l)
@@ -123,6 +86,8 @@ for i = 1:numel(list)
             t_temp = (t*tframe)-(tframe)+(tshift);
             w_temp = w*pxl;
             a_temp = a*(pxl^2);
+            v_temp = v*(pxl^3);
+            sa_temp = sa*(pxl^2);
             
             deltalength = l_temp(end) - l_temp(1);
             deltaarea = a_temp(end) - a_temp(1);
@@ -137,7 +102,7 @@ for i = 1:numel(list)
             
             % fit area curves
             try
-                beta = [a_temp(fi(1)) 0.025];
+                beta = [a_temp(1) 0.025];
                 [beta,r] = nlinfit(t_temp,a_temp,@expfit,beta);
                 
                 lambda.beta = beta;
@@ -152,24 +117,24 @@ for i = 1:numel(list)
             if fluor_on
                 if lineage
                     lin_cell = check_lineage(f,cid);
-                    cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'lineage',lin_cell,'avg_fluor',flr,'contourfile',list(i).name);
+                    cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'volume',v_temp,'surfacearea',sa_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'lineage',lin_cell,'avg_fluor',flr,'contourfile',list(i).name);
                 else
-                    cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'avg_fluor',flr,'contourfile',list(i).name);
+                    cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'volume',v_temp,'surfacearea',sa_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'avg_fluor',flr,'contourfile',list(i).name);
                 end
             else
                 if lineage
-                    if t_temp(end) == maxt || t_temp(1) == tframe
+                    if t_temp(end) == maxt || t_temp(1) < 10
                         lin_cell = 0;
                     else
                         lin_cell = check_lineage(f,cid);
                     end
-                    cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'lineage',lin_cell,'contourfile',list(i).name);
+                    cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'volume',v_temp,'surfacearea',sa_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'lineage',lin_cell,'contourfile',list(i).name);
                     
                 else
-                    cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'contourfile',list(i).name);
+                    cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'volume',v_temp,'surfacearea',sa_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'contourfile',list(i).name);
                 end
             end
-        else
+        elseif iscell(l)
             n = numel(l);
             for k = 1:n
                 if ~isempty(l{k}) & numel(l{k}) > 2
@@ -179,11 +144,15 @@ for i = 1:numel(list)
                     t_temp = (double(t{k}*tframe))-(tframe)+tshift;
                     w_temp = w{k}*pxl;
                     a_temp = a{k}*(pxl^2);
+                    v_temp = v{k}*(pxl^3);
+                    sa_temp = sa{k}*(pxl^2);
                     if microbej
                         l_temp = l_temp(~isnan(l_temp));
                         t_temp = t_temp(~isnan(l_temp));
                         w_temp = w_temp(~isnan(l_temp));
                         a_temp = a_temp(~isnan(l_temp));
+                        v_temp = v_temp(~isnan(l_temp));
+                        sa_temp = sa_temp(~isnan(l_temp));
                         if fluor_on
                             flr = flr(~isnan(l));
                         end
@@ -216,9 +185,9 @@ for i = 1:numel(list)
                     if fluor_on
                         if lineage
                             lin_cell = check_lineage(f,cid);
-                            cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'lineage',lin_cell,'avg_fluor',flr{k},'contourfile',list(i).name);
+                            cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'volume',v_temp,'surfacearea',sa_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'lineage',lin_cell,'avg_fluor',flr{k},'contourfile',list(i).name);
                         else
-                            cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'avg_fluor',flr{k},'contourfile',list(i).name);
+                            cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'volume',v_temp,'surfacearea',sa_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'avg_fluor',flr{k},'contourfile',list(i).name);
                         end
                     else
                         if lineage
@@ -227,13 +196,28 @@ for i = 1:numel(list)
                             else
                                 lin_cell = check_lineage_splitcell(f,cid,l,k);
                             end
-                            cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'lineage',lin_cell,'contourfile',list(i).name);
+                            cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'volume',v_temp,'surfacearea',sa_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'lineage',lin_cell,'contourfile',list(i).name);
                         else
-                            cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'contourfile',list(i).name);
+                            cellstructure{count} = struct('cid',cid,'length',l_temp,'width',w_temp,'time',t_temp,'area',a_temp,'volume',v_temp,'surfacearea',sa_temp,'deltalength',deltalength,'deltaarea',deltaarea,'color',c,'instant_lambda',instant_lambda,'lambda',lambda,'divtime',divtime,'finalt',finalt,'startt',startt,'contourfile',list(i).name);
                         end
                     end
                 end
             end
         end
     end
+end
+end
+
+function l = eval_resid(l,t)
+if iscell(l)
+    l1 = l{1};
+    t1 = t{1};
+    [p,S] = polyfit(t1,log(l1),1);
+else
+    [p,S] = polyfit(t,log(l),1);
+end
+r = S.normr;
+if sum(r) > 0.05
+    l = [];
+end
 end

@@ -5,38 +5,34 @@ function mesh_contours(varargin)
 % mesh_contours(directory,prefix)
 % mesh_contours(directory,prefix,remesh)
 
-  %can specify directory, otherwise uses current directory
-  if numel(varargin) == 1
-      if isa(varargin{1},'char')
-        list = dir(['*' varargin{1} '*.mat']);
-        remesh = 0;
-      elseif isa(varargin{1},'double')
-        remesh = varargin{1};
-        list = dir('*.mat');
-      end
-  elseif numel(varargin) == 2
-      if isa(varargin{2},'str')
-        list = dir([varargin{2} '/*' varargin{1} '*.mat']);
-        remesh = 0;
-      elseif isa(varargin{1},'double')
-        remesh = varargin{1};
-        list = dir('*.mat');
-      end
-      
-  elseif numel(varargin) == 3
-        list = dir([varargin{2} '/*' varargin{1} '*.mat']);
-        remesh = varargin{3};
-  else
-    list = dir('*.mat');
-    remesh = 0;
-  end
+directory = pwd;
+prefix = '';
+remesh = 0;
+
+if ~isempty(varargin)
+    evennumvars = mod(numel(varargin),2);
+    if evennumvars
+        fprintf('Too many arguments. Use: meshcontours([optional] directory, prefix, remesh)\n')
+        return
+    end
+    
+    for i = 1:2:numel(varargin)
+        eval(sprintf('%s = varargin{%d};',varargin{i},i+1));
+    end
+end
+
+if ~strcmp(directory(end),'/')
+    directory = [directory '/'];
+end
+
+list = dir([directory '*' prefix '*CONTOURS.mat']);
 
   %% mesh contour files
   count = 0;
   for i = 1:numel(list)
     count_file = 0;
     fprintf('Loading: %s\n', list(i).name)
-    f = load(list(i).name);
+    f = load([directory list(i).name]);
     if isfield(f.frame(1).object,'mesh') == 0 || remesh
       fprintf('Meshing: %s\n',list(i).name);
       for k = 1:numel(f.frame)
@@ -52,11 +48,7 @@ function mesh_contours(varargin)
         end
       end
       fprintf('%s: %d\n',list(i).name,count_file)
-      if numel(varargin) == 1 && isa(varargin{1},'str')
-        save([varargin{1} '/' list(i).name],'-struct','f');
-      else
-        save([list(i).name],'-struct','f');
-      end
+      save([directory list(i).name],'-struct','f');
     end
     count = count + count_file;
   end 

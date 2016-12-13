@@ -1,4 +1,4 @@
-function [l,t,w,a,varargout]= splitcells(f,cid)
+function [l,t,w,a,v,sa,varargout]= splitcells(f,cid)
 %this script takes a cell as defined by morphometrics and sees if there has
 %been a reassignment of the id to a mother and daughter cell. If so,
 %returns back separate length trajectories in a cell, if not, returns the length/time
@@ -18,12 +18,14 @@ l = {};
 t = {};
 w = {};
 a = {};
+v = {};
+sa = {};
 
 
 if fluor_on
-    [l_traj,t_traj,w_traj,a_traj,flr_traj] = get_cellparam(f,cid);
+    [l_traj,t_traj,w_traj,a_traj,v_traj,sa_traj,flr_traj] = get_cellparam(f,cid);
 else
-    [l_traj,t_traj,w_traj,a_traj] = get_cellparam(f,cid); % get length/time
+    [l_traj,t_traj,w_traj,a_traj,v_traj,sa_traj] = get_cellparam(f,cid); % get length/time
 end
 if numel(l_traj) > 3
     dl = diff(l_traj);
@@ -35,6 +37,8 @@ if numel(l_traj) > 3
         t = t_traj;
         w = w_traj;
         a = a_traj;
+        v = v_traj;
+        sa = sa_traj;
         if fluor_on
             flr = flr_traj;
         end
@@ -46,9 +50,9 @@ if numel(l_traj) > 3
         for i = 1:numel(pks)
             tend = t_traj(locs(i));
             if fluor_on
-                [l{i},t{i},w{i},a{i},flr{i}] = get_cellparam(f,cid,tstart,tend);
+                [l{i},t{i},w{i},a{i},v{i},sa{i},flr{i}] = get_cellparam(f,cid,tstart,tend);
             else
-                [l{i},t{i},w{i},a{i}] = get_cellparam(f,cid,tstart,tend);
+                [l{i},t{i},w{i},a{i},v{i},sa{i}] = get_cellparam(f,cid,tstart,tend);
             end
             tstart = t_traj(locs(i)+1);
         end
@@ -56,9 +60,9 @@ if numel(l_traj) > 3
         %last peak
         i = numel(pks)+1;
         if fluor_on
-            [l{i},t{i},w{i},a{i},flr{i}] = get_cellparam(f,cid,tstart);
+            [l{i},t{i},w{i},a{i},v{i},sa{i},flr{i}] = get_cellparam(f,cid,tstart);
         else
-            [l{i},t{i},w{i},a{i}] = get_cellparam(f,cid,tstart);
+            [l{i},t{i},w{i},a{i},v{i},sa{i}] = get_cellparam(f,cid,tstart);
         end
     end
 end

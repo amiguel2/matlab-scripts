@@ -2,10 +2,10 @@
 clear all
 close all
 cd('/Users/amiguel/sherlock_scratch/Working_Folder/Rcs_system/RCS30/')
-list1 = dir('1-*MESH.mat'); % EM
-list2 = dir('2-*MESH.mat'); % WT
-list3 = dir('3-*MESH.mat'); % Peri
-list4 = dir('4-*MESH.mat'); % IM
+list1 = dir('1-*CONTOURS.mat'); % EM
+list2 = dir('2-*CONTOURS.mat'); % WT
+list3 = dir('3-*CONTOURS.mat'); % Peri
+list4 = dir('4-*CONTOURS.mat'); % IM
 %  
 % mesh_contours
 %fluor_contours
@@ -13,17 +13,17 @@ list4 = dir('4-*MESH.mat'); % IM
 c = cbrewer('qual','Set1',4);
 em = get_data(list1,2,0.08,'onecolor',c(1,:),'fluor_on',0,'lineage',1);
 wt = get_data(list2,2,0.08,'onecolor',c(2,:),'fluor_on',0,'lineage',1);
-% peri = get_data(list3,2,0.08,'onecolor',c(3,:),'fluor_on',0,'lineage',1);
-% im = get_data(list4,2,0.08,'onecolor',c(4,:),'fluor_on',0,'lineage',1);
-save('RCS31-data.mat')
-%load('RCS29-data.mat')
+peri = get_data(list3,2,0.08,'onecolor',c(3,:),'fluor_on',0,'lineage',1);
+im = get_data(list4,2,0.08,'onecolor',c(4,:),'fluor_on',0,'lineage',1);
+save('RCS30-data.mat')
+%load('RCS30-data.mat')
 %% length plots
 
 % filtidx = find([cellfun(@(x) mean(x.avg_fluor),peri)> 800]);
 % cs = {peri{filtidx}};
-cs=peri;
-plotsave = 'peri-';
-j = 3; % color
+cs=em;
+plotsave = 'em-';
+j = 1; % color
 % x = find(cell2mat(cellfun(@(X) mean(X.area) < 2,cs,'UniformOutput',false))==1);
 % bad_cells = [1507 2970 x];
 % allcells =1:numel(cs);
@@ -37,11 +37,11 @@ c = c0;
 % c(4,:) = c0(3,:);
 % c(3,:) = c0(4,:);
 
-tF = 160;
+tF = 120;
 tS = 0;
 lineage_on = 0;
 save_plot = 1;
-fluor_on = 1;
+fluor_on = 0;
 close all;
 all_length = [];
 all_time = [];
@@ -384,7 +384,7 @@ for i = 1:numel(cs)
             scatter(cs{i}.startt,cs{i}.divtime,50,[0.5 0.5 0.5],'filled')
         end
     else
-        scatter(cs{i}.startt,cs{i}.divtime,50,cs{i}.color','filled')
+        scatter(cs{i}.startt,cs{i}.divtime,50,cs{i}.color,'filled')
     end
     hold on;
     %end
@@ -525,9 +525,9 @@ end
 figure('Color',[1 1 1],'Position', [100, 100, 800, 800]);
 exp = {em, wt, im, peri};
 tS = 0;
-tF = 160;
+tF = 120;
 lineage_on = 1; 
-fluor_on = 1;
+fluor_on = 0;
 for j = 1:numel(exp)
     cs = exp{j};
         if lineage_on
