@@ -1,0 +1,109 @@
+% calculate_fluor_profiles:
+%
+% inputs:
+% - contfile: the Morphometrics CONTOURS file that containts the MT
+% mesh info
+% - fluorfile: the corresponding fluorescence images
+% - suff: suffix to add to the CONTOURS file; use '' if you want to
+% write to the same file
+% - params: parameters that can be used to modify the script (see
+% below)
+%
+% Paramaters:
+% - jumpframe: how many frames to skip (1 is default)
+function calculate_fluor_profiles(contfile,fluorfile,suff,params,writepath)
+tic
+if nargin < 5
+    writepath='';
+end
+
+%q = 0;
+%contfile = ['Pos0',int2str(q),'_CONTOURS.mat'];
+%fname = ['GFP0',int2str(q),'.tif'];
+info = imfinfo(fluorfile);
+num_images = numel(info);
+    
+s = load(contfile);
+
+checkcount = 1;
+check = s.frame(checkcount).num_objs > 0;
+while(check == 0)
+    checkcount = checkcount + 1;
+    check = s.frame(checkcount).num_objs > 0;
+    if checkcount > numel(s.frame)
+        return
+    end
+end
+if isfield(s.frame(checkcount).object,'ave_fluor')
+    fprintf('...Already calculated');
+   return
+end
+% fprintf('Loading %s...\n',contfile);
+
+
+
+
+if ~isfield(params,'jumpframe')
+    jumpframe = 1; % might need to change this to two if there's an
+                   % issue with focusing
+else
+    jumpframe = params.jumpframe;
+end
+
+% loop over all frames
+for i=1:jumpframe:min(num_images,numel(s.frame))
+    k = (i-1)/jumpframe+1;
+    im = imread(fluorfile, k, 'Info', info);
+    fprintf(' %d',i);
+    for j=1:numel(s.frame(i).object)
+        data = s.frame(i).object(j);
+            if isfield(data,'area') & numel(data.area)>0
+%                 fprintf('Processing frame %d, object %d...\n',i,j);
+
+                if isfield(data,'mesh') & size(data.mesh,1)>0
+                    xs = data.Xcont;
+                    ys = data.Ycont;
+
+                    dist_in = 5;
+                    dist_out = 5;
+                    N = 10;
+
+                    %fl = contour_signal(im,xs,ys,dist_in,dist_out,N);
+                     [fl,av,tot,lengths] = contour_signal_interior(im,data,N);
+                    prof = contour_signal2(im,xs,ys,dist_in,dist_out,N);
+                    s.frame(i).object(j).fluor_interior = fl;
+                    s.frame(i).object(j).ave_fluor = av;
+                    s.frame(i).object(j).fluor_profile = prof;
+                    s.frame(i).object(j).cell_lengths = lengths;
+                elseif isfield(data,'MT_mesh') & size(data.MT_mesh,1)>0
+                    xs = data.Xcont;
+                    ys = data.Ycont;
+
+                    dist_in = 5;
+                    dist_out = 5;
+                    N = 10;
+
+                    %fl = contour_signal(im,xs,ys,dist_in,dist_out,N);
+                    [fl,av,tot,lengths] = contour_signal_interior(im,data,N);
+                    prof = contour_signal2(im,xs,ys,dist_in,dist_out,N);
+                    s.frame(i).object(j).fluor_interior = fl;
+                    s.frame(i).object(j).ave_fluor = av;
+                    s.frame(i).object(j).fluor_profile = prof;
+                    s.frame(i).object(j).cell_lengths = lengths;
+                else
+                    fprintf('No Mesh\n')
+                    s.frame(i).object(j).fluor_interior = [];
+                    s.frame(i).object(j).ave_fluor = [];
+                    s.frame(i).object(j).fluor_profile = [];
+                    s.frame(i).object(j).cell_lengths = [];
+                end
+            end
+    end
+end
+fprintf('...Done!\n')
+[pathstr,name,ext] = fileparts(contfile);
+contfile = [writepath,name,suff,ext];
+save(contfile,'-struct','s');
+% fprintf('Saved: contfile\n\n');
+toc
+end % end function
